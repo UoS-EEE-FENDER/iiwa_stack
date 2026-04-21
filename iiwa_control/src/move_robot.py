@@ -11,12 +11,13 @@ current_joints = [0.0] * 7
 selected_joint = 0  # 0-6 corresponds to A1-A7
 
 def get_key():
-    """Reads a single keypress from stdin without requiring Enter."""
     fd = sys.stdin.fileno()
     old_settings = termios.tcgetattr(fd)
     try:
-        tty.setraw(sys.stdin.fileno())
+        tty.setraw(fd)
         ch = sys.stdin.read(1)
+        if ch == '\x03':  # Ctrl+C
+            raise KeyboardInterrupt
     finally:
         termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
     return ch
@@ -105,8 +106,9 @@ def main():
         pub.publish(cmd_msg)
         rate.sleep()
 
-if __name__ == '__main__':
-    try:
-        main()
-    except rospy.ROSInterruptException:
-        pass
+try:
+    while not rospy.is_shutdown():
+        key = get_key()
+        ...
+except KeyboardInterrupt:
+    print("\nExiting cleanly...")
